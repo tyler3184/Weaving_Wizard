@@ -91,25 +91,16 @@
       border-radius: 8px;
       margin: 20px 0;
     }
-    .numberColorBox {
-      width: 50px;
-      height: 50px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: transform 0.3s, border 0.3s;
-    }
-    .numberColorBox:hover {
-      transform: scale(1.1);
-      border: 2px solid white;
-    }
   </style>
 </head>
 <body>
   <div id="container">
     <h1>Weaving Wizard</h1>
 
+    <!-- Top color picker boxes -->
     <div id="colorSelectorTop"></div>
 
+    <!-- Main number boxes -->
     <div id="numberBoxes" onclick="nextNumber()">
       <div class="numberBox" id="box1"></div>
       <div class="numberBox" id="box2"></div>
@@ -172,7 +163,7 @@
       const r = (rgb >> 16) & 0xff;
       const g = (rgb >> 8) & 0xff;
       const b = (rgb >> 0) & 0xff;
-      const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const luma = 0.2126*r + 0.7152*g + 0.0722*b;
       return luma > 150;
     }
 
@@ -202,7 +193,6 @@
       localStorage.removeItem("pattern");
       localStorage.removeItem("currentIndex");
       localStorage.removeItem("colorRules");
-      alert("Memory cleared!");
       pattern = [];
       currentIndex = 0;
       colorRules = [];
@@ -211,17 +201,17 @@
     }
 
     function loadPattern() {
-      const input = document.getElementById("patternInput").value.replace(/\s/g, '');
+      const input = document.getElementById("patternInput").value.replace(/\s/g,'');
       const rawItems = input.split(',');
       pattern = [];
       rawItems.forEach(item => {
-        if (item.length === 0) return;
-        if (item.length === 1) {
+        if(item.length===0) return;
+        if(item.length===1){
           const num = parseInt(item);
-          if (num >= 1 && num <= 6) pattern.push([num]);
+          if(num>=1 && num<=6) pattern.push([num]);
         } else {
-          const nums = item.split('').map(d => parseInt(d)).filter(n => n >= 1 && n <= 6);
-          if (nums.length) pattern.push(nums);
+          const nums = item.split('').map(d=>parseInt(d)).filter(n=>n>=1 && n<=6);
+          if(nums.length) pattern.push(nums);
         }
       });
       currentIndex = 0;
@@ -231,77 +221,83 @@
 
     function updateDisplay() {
       const pickInfo = document.getElementById("pickInfo");
-      for (let i = 1; i <= 6; i++) {
-        const box = document.getElementById("box" + i);
+      for(let i=1;i<=6;i++){
+        const box = document.getElementById("box"+i);
         box.textContent = "";
         box.classList.remove("highlight");
         box.style.backgroundColor = "#444";
         box.style.color = "white";
       }
-      if (pattern.length === 0) {
-        pickInfo.innerText = "Pick: 0 of 0";
+      if(pattern.length===0){
+        pickInfo.innerText="Pick: 0 of 0";
         return;
       }
       const currentNumbers = pattern[currentIndex];
-      if (Array.isArray(currentNumbers)) {
-        currentNumbers.forEach(num => {
-          if (num >= 1 && num <= 6) {
-            const activeBox = document.getElementById("box" + num);
+      if(Array.isArray(currentNumbers)){
+        currentNumbers.forEach(num=>{
+          if(num>=1 && num<=6){
+            const activeBox = document.getElementById("box"+num);
             activeBox.textContent = num;
             activeBox.classList.add("highlight");
-            const rule = colorRules.find(r => r.numbers.includes(num));
-            if (rule) {
-              activeBox.style.backgroundColor = rule.color;
-              activeBox.style.color = isColorLight(rule.color) ? "black" : "white";
+            if(colorRules[num-1]){
+              activeBox.style.backgroundColor=colorRules[num-1];
+              activeBox.style.color=isColorLight(colorRules[num-1])?"black":"white";
             }
           }
         });
-        if (currentNumbers.length === 1) speakNumber(currentNumbers[0]);
+        if(currentNumbers.length===1) speakNumber(currentNumbers[0]);
       }
-      pickInfo.innerText = `Pick: ${currentIndex + 1} of ${pattern.length}`;
-      document.getElementById("progress").style.width = ((currentIndex + 1) / pattern.length * 100) + "%";
+      pickInfo.innerText = `Pick: ${currentIndex+1} of ${pattern.length}`;
+      document.getElementById("progress").style.width = ((currentIndex+1)/pattern.length*100)+"%";
       saveProgress();
     }
 
-    function nextNumber() { if (!pattern.length) return; currentIndex = (currentIndex + 1) % pattern.length; updateDisplay(); }
-    function prevNumber() { if (!pattern.length) return; currentIndex = (currentIndex - 1 + pattern.length) % pattern.length; updateDisplay(); }
-    function reset() { currentIndex = 0; updateDisplay(); document.getElementById("progress").style.width = "0%"; saveProgress(); }
-    function jumpToPick() { const jumpVal = parseInt(document.getElementById("jumpInput").value); if (!isNaN(jumpVal) && jumpVal >= 1 && jumpVal <= pattern.length) { currentIndex = jumpVal - 1; updateDisplay(); } }
-    function speakNumber(num) { if (!document.getElementById("speakToggle").checked) return; const numberWords = ["one","two","three","four","five","six"]; new Audio(`${numberWords[num-1]}.mp3`).play(); }
-    function loadCustomSound(event) { const file = event.target.files[0]; if(file) customAudio = URL.createObjectURL(file); }
+    function nextNumber(){if(!pattern.length) return; currentIndex=(currentIndex+1)%pattern.length; updateDisplay();}
+    function prevNumber(){if(!pattern.length) return; currentIndex=(currentIndex-1+pattern.length)%pattern.length; updateDisplay();}
+    function reset(){currentIndex=0; updateDisplay(); document.getElementById("progress").style.width="0%"; saveProgress();}
+    function jumpToPick(){const jumpVal=parseInt(document.getElementById("jumpInput").value); if(!isNaN(jumpVal)&&jumpVal>=1&&jumpVal<=pattern.length){currentIndex=jumpVal-1; updateDisplay();}}
+    function speakNumber(num){if(!document.getElementById("speakToggle").checked) return; const words=["one","two","three","four","five","six"]; new Audio(`${words[num-1]}.mp3`).play();}
+    function loadCustomSound(event){const file=event.target.files[0]; if(file) customAudio=URL.createObjectURL(file);}
 
-    // --- Top color boxes with multi-number assignment ---
-    function createTopColorBoxes() {
+    // --- Top color boxes (simple click to pick color) ---
+    function createTopColorBoxes(){
       const container = document.getElementById("colorSelectorTop");
-      container.innerHTML = '';
+      container.innerHTML='';
       for(let i=1;i<=6;i++){
-        const box = document.createElement("div");
-        box.className="numberColorBox";
-        const savedRule = colorRules.find(r=>r.numbers.includes(i));
-        box.style.backgroundColor = savedRule ? savedRule.color : "#444";
+        const wrapper=document.createElement("div");
+        wrapper.style.display="flex";
+        wrapper.style.flexDirection="column";
+        wrapper.style.alignItems="center";
+
+        const box=document.createElement("div");
+        box.style.width="50px";
+        box.style.height="50px";
+        box.style.borderRadius="6px";
+        box.style.backgroundColor=colorRules[i-1]||"#444";
+        box.style.cursor="pointer";
         box.title=`Number ${i}`;
-        box.onclick = ()=>{
-          const colorInput = document.createElement("input");
-          colorInput.type="color";
-          colorInput.value=box.style.backgroundColor;
-          colorInput.style.position="fixed"; colorInput.style.left="-9999px";
-          document.body.appendChild(colorInput);
+
+        const colorInput=document.createElement("input");
+        colorInput.type="color";
+        colorInput.style.display="none";
+        colorInput.value=colorRules[i-1]||"#444";
+
+        box.onclick=()=>{
+          colorInput.style.display="block";
           colorInput.click();
-          colorInput.oninput = ()=>{
-            const newColor = colorInput.value;
-            const nums = prompt(`Assign color to which numbers? (1-6, comma-separated)`, i);
-            if(!nums) return;
-            const selectedNumbers = nums.split(",").map(n=>parseInt(n.trim())).filter(n=>!isNaN(n)&&n>=1&&n<=6);
-            selectedNumbers.forEach(n=>{
-              const existingRule = colorRules.find(r=>r.numbers.includes(n));
-              if(existingRule) existingRule.color=newColor;
-              else colorRules.push({numbers:[n],color:newColor});
-            });
-            updateDisplay(); saveProgress(); createTopColorBoxes();
-          };
-          colorInput.onchange = ()=>document.body.removeChild(colorInput);
-        };
-        container.appendChild(box);
+        }
+
+        colorInput.oninput=()=>{
+          const newColor=colorInput.value;
+          box.style.backgroundColor=newColor;
+          colorRules[i-1]=newColor;
+          saveProgress();
+          updateDisplay();
+        }
+
+        wrapper.appendChild(box);
+        wrapper.appendChild(colorInput);
+        container.appendChild(wrapper);
       }
     }
 
