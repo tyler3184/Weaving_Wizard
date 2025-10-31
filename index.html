@@ -20,9 +20,7 @@
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.4);
     }
-    h1 {
-      margin-top: 0;
-    }
+    h1 { margin-top: 0; }
     #numberBoxes {
       display: flex;
       justify-content: space-between;
@@ -40,13 +38,8 @@
       border-radius: 4px;
       transition: background-color 0.4s ease, color 0.4s ease;
     }
-    .highlight {
-      color: black;
-    }
-    #pickInfo {
-      margin-top: 10px;
-      font-size: 18px;
-    }
+    .highlight { color: black; }
+    #pickInfo { margin-top: 10px; font-size: 18px; }
     .main-buttons {
       display: flex;
       flex-wrap: wrap;
@@ -64,9 +57,7 @@
       cursor: pointer;
       transition: background-color 0.2s;
     }
-    .main-buttons button:hover {
-      background-color: #777;
-    }
+    .main-buttons button:hover { background-color: #777; }
     #progressContainer {
       width: 100%;
       background: #333;
@@ -86,9 +77,7 @@
       padding: 20px;
       border-radius: 4px;
     }
-    #colorRulesList {
-      margin-top: 10px;
-    }
+    #colorRulesList { margin-top: 10px; }
     .ruleItem {
       margin: 5px 0;
       padding: 6px;
@@ -105,10 +94,7 @@
       margin-right: 10px;
       border-radius: 2px;
     }
-    .ruleText {
-      display: flex;
-      align-items: center;
-    }
+    .ruleText { display: flex; align-items: center; }
     .ruleItem button {
       padding: 4px 10px;
       font-size: 12px;
@@ -125,9 +111,7 @@
       border: none;
       margin: 5px;
     }
-    label {
-      font-size: 16px;
-    }
+    label { font-size: 16px; }
     .card {
       background-color: #3a3a3a;
       padding: 20px;
@@ -158,6 +142,7 @@
     <div class="main-buttons">
       <button onclick="nextNumber()">Next</button>
       <button onclick="prevNumber()">Previous</button>
+      <button onclick="clearMemory()">Reset Memory</button>
     </div>
 
     <div class="card">
@@ -213,6 +198,42 @@
       return luma > 150;
     }
 
+    // Save progress including color rules
+    function saveProgress() {
+      localStorage.setItem("pattern", JSON.stringify(pattern));
+      localStorage.setItem("currentIndex", currentIndex);
+      localStorage.setItem("colorRules", JSON.stringify(colorRules));
+    }
+
+    // Load saved pattern, pick, and color rules
+    function loadProgress() {
+      const savedPattern = localStorage.getItem("pattern");
+      const savedIndex = localStorage.getItem("currentIndex");
+      const savedRules = localStorage.getItem("colorRules");
+
+      if (savedPattern) {
+        pattern = JSON.parse(savedPattern);
+        document.getElementById("patternInput").value = pattern.map(p => p.join("")).join(",");
+      }
+
+      if (savedIndex !== null) currentIndex = parseInt(savedIndex);
+
+      if (savedRules) {
+        colorRules = JSON.parse(savedRules);
+        updateColorRulesDisplay();
+      }
+
+      updateDisplay();
+    }
+
+    // Clear saved memory
+    function clearMemory() {
+      localStorage.removeItem("pattern");
+      localStorage.removeItem("currentIndex");
+      localStorage.removeItem("colorRules");
+      alert("Memory cleared!");
+    }
+
     function loadPattern() {
       const input = document.getElementById("patternInput").value.replace(/\s/g, '');
       const rawItems = input.split(',');
@@ -229,6 +250,7 @@
       });
       currentIndex = 0;
       updateDisplay();
+      saveProgress();
     }
 
     function updateDisplay() {
@@ -260,12 +282,11 @@
             }
           }
         });
-        if (currentNumbers.length === 1) {
-          speakNumber(currentNumbers[0]);
-        }
+        if (currentNumbers.length === 1) speakNumber(currentNumbers[0]);
       }
       pickInfo.innerText = `Pick: ${currentIndex + 1} of ${pattern.length}`;
       document.getElementById("progress").style.width = ((currentIndex + 1) / pattern.length * 100) + "%";
+      saveProgress();
     }
 
     function nextNumber() {
@@ -284,6 +305,7 @@
       currentIndex = 0;
       updateDisplay();
       document.getElementById("progress").style.width = "0%";
+      saveProgress();
     }
 
     function jumpToPick() {
@@ -304,9 +326,7 @@
 
     function loadCustomSound(event) {
       const file = event.target.files[0];
-      if (file) {
-        customAudio = URL.createObjectURL(file);
-      }
+      if (file) customAudio = URL.createObjectURL(file);
     }
 
     function addColorRule() {
@@ -336,7 +356,7 @@
         text.appendChild(numbers);
         const button = document.createElement('button');
         button.textContent = 'Delete';
-        button.onclick = () => removeColorRule(index);
+        button.onclick = () => { removeColorRule(index); saveProgress(); };
         div.appendChild(text);
         div.appendChild(button);
         list.appendChild(div);
@@ -348,6 +368,9 @@
       updateColorRulesDisplay();
       updateDisplay();
     }
+
+    // Load saved progress on page start
+    window.onload = loadProgress;
   </script>
 </body>
 </html>
