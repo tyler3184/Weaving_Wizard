@@ -1,307 +1,357 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Weaving Wizard</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #1a1a1a;
-      color: #f0f0f0;
-      margin: 0;
-      padding: 30px;
-    }
-    #container {
-      background-color: #2a2a2a;
-      padding: 30px;
-      border-radius: 8px;
-      max-width: 900px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.4);
-    }
-    h1 { margin-top: 0; }
-    #colorSelectorTop {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    #numberBoxes {
-      display: flex;
-      justify-content: space-between;
-      margin: 20px auto;
-      width: 100%;
-      cursor: pointer;
-    }
-    .numberBox {
-      flex: 1;
-      margin: 0 5px;
-      font-size: 100px;
-      padding: 50px 0;
-      text-align: center;
-      background-color: #444;
-      border-radius: 4px;
-      transition: background-color 0.4s ease, color 0.4s ease;
-    }
-    .highlight { color: black; }
-    #pickInfo { margin-top: 10px; font-size: 18px; }
-    .main-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .main-buttons button {
-      font-size: 22px;
-      padding: 15px 30px;
-      border-radius: 4px;
-      border: none;
-      background-color: #5a5a5a;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    .main-buttons button:hover { background-color: #777; }
-    #progressContainer {
-      width: 100%;
-      background: #333;
-      height: 10px;
-      margin-top: 20px;
-      border-radius: 4px;
-    }
-    #progress {
-      height: 10px;
-      background: limegreen;
-      width: 0%;
-      border-radius: 4px;
-    }
-    input[type="text"], input[type="number"], input[type="file"] {
-      padding: 6px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: none;
-      margin: 5px;
-    }
-    label { font-size: 16px; }
-    .card {
-      background-color: #3a3a3a;
-      padding: 20px;
-      border-radius: 8px;
-      margin: 20px 0;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Weaving Wizard</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+    margin: 0;
+    padding: 30px;
+  }
+  #container {
+    background-color: #2a2a2a;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 900px;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  }
+  h1 { margin-top: 0; }
+  #colorSelectorTop {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .colorBox {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #colorPickerPanel {
+    position: absolute;
+    background-color: #333;
+    padding: 10px;
+    border-radius: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 100;
+  }
+  #colorGrid {
+    display: grid;
+    grid-template-columns: repeat(8, 30px);
+    gap: 5px;
+  }
+  .colorOption {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  #recentColors {
+    display: flex;
+    gap: 5px;
+  }
+  #numberBoxes {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px auto;
+    width: 100%;
+    cursor: pointer;
+  }
+  .numberBox {
+    flex: 1;
+    margin: 0 5px;
+    font-size: 100px;
+    padding: 50px 0;
+    text-align: center;
+    background-color: #444;
+    border-radius: 4px;
+    transition: background-color 0.1s ease, color 0.1s ease;
+  }
+  .highlight { color: black; }
+  #pickInfo { margin-top: 10px; font-size: 18px; }
+  .main-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .main-buttons button {
+    font-size: 22px;
+    padding: 15px 30px;
+    border-radius: 4px;
+    border: none;
+    background-color: #5a5a5a;
+    color: white;
+    cursor: pointer;
+  }
+  #progressContainer {
+    width: 100%;
+    background: #333;
+    height: 10px;
+    margin-top: 20px;
+    border-radius: 4px;
+  }
+  #progress {
+    height: 10px;
+    background: limegreen;
+    width: 0%;
+    border-radius: 4px;
+  }
+  input[type="text"], input[type="number"], input[type="file"] {
+    padding: 6px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: none;
+    margin: 5px;
+  }
+  label { font-size: 16px; }
+  .card {
+    background-color: #3a3a3a;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+</style>
 </head>
 <body>
-  <div id="container">
-    <h1>Weaving Wizard</h1>
+<div id="container">
+  <h1>Weaving Wizard</h1>
 
-    <!-- Top color picker boxes -->
-    <div id="colorSelectorTop"></div>
+  <!-- Top color selector -->
+  <div id="colorSelectorTop"></div>
+  <div id="colorPickerPanel">
+    <div id="colorGrid"></div>
+    <div id="recentColors"></div>
+  </div>
 
-    <!-- Main number boxes -->
-    <div id="numberBoxes" onclick="nextNumber()">
-      <div class="numberBox" id="box1"></div>
-      <div class="numberBox" id="box2"></div>
-      <div class="numberBox" id="box3"></div>
-      <div class="numberBox" id="box4"></div>
-      <div class="numberBox" id="box5"></div>
-      <div class="numberBox" id="box6"></div>
+  <!-- Main number boxes -->
+  <div id="numberBoxes">
+    <div class="numberBox" id="box1"></div>
+    <div class="numberBox" id="box2"></div>
+    <div class="numberBox" id="box3"></div>
+    <div class="numberBox" id="box4"></div>
+    <div class="numberBox" id="box5"></div>
+    <div class="numberBox" id="box6"></div>
+  </div>
+
+  <div id="pickInfo">Pick: 0 of 0</div>
+
+  <div id="progressContainer"><div id="progress"></div></div>
+
+  <div class="main-buttons">
+    <button onclick="nextNumber()">Next</button>
+    <button onclick="prevNumber()">Previous</button>
+    <button onclick="reset()">Reset</button>
+    <button onclick="clearMemory()">Clear Memory</button>
+  </div>
+
+  <div class="card">
+    <div>
+      <label for="patternInput">Enter Pattern (comma-separated):</label><br>
+      <input type="text" id="patternInput" placeholder="e.g. 1,2,3,4">
+      <button onclick="loadPattern()">Load Pattern</button>
     </div>
-
-    <div id="pickInfo">Pick: 0 of 0</div>
-
-    <div id="progressContainer">
-      <div id="progress"></div>
-    </div>
-
-    <div class="main-buttons">
-      <button onclick="nextNumber()">Next</button>
-      <button onclick="prevNumber()">Previous</button>
-      <button onclick="reset()">Reset</button>
-      <button onclick="clearMemory()">Clear Memory</button>
-    </div>
-
-    <div class="card">
-      <div>
-        <label for="patternInput">Enter Pattern (comma-separated):</label><br>
-        <input type="text" id="patternInput" placeholder="e.g. 1,2,3,4">
-        <button onclick="loadPattern()">Load Pattern</button>
-      </div>
-      <div style="margin-top: 20px;">
-        <label for="jumpInput">Jump to Pick:</label><br>
-        <input type="number" id="jumpInput" style="width: 80px;" min="1">
-        <button onclick="jumpToPick()">Go</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="margin-bottom: 10px;">
-        <label><input type="checkbox" id="loopToggle" checked> Loop Pattern</label>
-      </div>
-      <div>
-        <label><input type="checkbox" id="speakToggle" checked> Read Number Aloud</label>
-      </div>
-    </div>
-
-    <div class="card">
-      <label for="customSound">Upload Custom Sound:</label><br>
-      <input type="file" id="customSound" accept="audio/*" onchange="loadCustomSound(event)">
+    <div style="margin-top: 20px;">
+      <label for="jumpInput">Jump to Pick:</label><br>
+      <input type="number" id="jumpInput" style="width: 80px;" min="1">
+      <button onclick="jumpToPick()">Go</button>
     </div>
   </div>
 
-  <script>
-    let pattern = [];
-    let currentIndex = 0;
-    let customAudio = null;
-    let colorRules = [];
+  <div class="card">
+    <div style="margin-bottom: 10px;">
+      <label><input type="checkbox" id="loopToggle" checked> Loop Pattern</label>
+    </div>
+    <div>
+      <label><input type="checkbox" id="speakToggle" checked> Read Number Aloud</label>
+    </div>
+  </div>
 
-    function isColorLight(hex) {
-      const c = hex.substring(1);
-      const rgb = parseInt(c, 16);
-      const r = (rgb >> 16) & 0xff;
-      const g = (rgb >> 8) & 0xff;
-      const b = (rgb >> 0) & 0xff;
-      const luma = 0.2126*r + 0.7152*g + 0.0722*b;
-      return luma > 150;
-    }
+  <div class="card">
+    <label for="customSound">Upload Custom Sound:</label><br>
+    <input type="file" id="customSound" accept="audio/*" onchange="loadCustomSound(event)">
+  </div>
+</div>
 
-    function saveProgress() {
-      localStorage.setItem("pattern", JSON.stringify(pattern));
-      localStorage.setItem("currentIndex", currentIndex);
-      localStorage.setItem("colorRules", JSON.stringify(colorRules));
-    }
+<script>
+let pattern = [];
+let currentIndex = 0;
+let customAudio = null;
+let colorRules = [];
+let recentColors = [];
 
-    function loadProgress() {
-      const savedPattern = localStorage.getItem("pattern");
-      const savedIndex = localStorage.getItem("currentIndex");
-      const savedRules = localStorage.getItem("colorRules");
+// --- Helper Functions ---
+function isColorLight(hex){
+  const c=hex.substring(1);
+  const rgb=parseInt(c,16);
+  const r=(rgb>>16)&0xff;
+  const g=(rgb>>8)&0xff;
+  const b=(rgb>>0)&0xff;
+  return 0.2126*r + 0.7152*g + 0.0722*b > 150;
+}
 
-      if (savedPattern) {
-        pattern = JSON.parse(savedPattern);
-        document.getElementById("patternInput").value = pattern.map(p => p.join("")).join(",");
-      }
-      if (savedIndex !== null) currentIndex = parseInt(savedIndex);
-      if (savedRules) colorRules = JSON.parse(savedRules);
+// --- Persistence ---
+function saveProgress(){
+  localStorage.setItem("pattern",JSON.stringify(pattern));
+  localStorage.setItem("currentIndex",currentIndex);
+  localStorage.setItem("colorRules",JSON.stringify(colorRules));
+  localStorage.setItem("recentColors",JSON.stringify(recentColors));
+}
 
-      createTopColorBoxes();
-      updateDisplay();
-    }
+function loadProgress(){
+  const savedPattern = localStorage.getItem("pattern");
+  const savedIndex = localStorage.getItem("currentIndex");
+  const savedRules = localStorage.getItem("colorRules");
+  const savedRecent = localStorage.getItem("recentColors");
 
-    function clearMemory() {
-      localStorage.removeItem("pattern");
-      localStorage.removeItem("currentIndex");
-      localStorage.removeItem("colorRules");
-      pattern = [];
-      currentIndex = 0;
-      colorRules = [];
-      createTopColorBoxes();
-      updateDisplay();
-    }
+  if(savedPattern){ pattern = JSON.parse(savedPattern); document.getElementById("patternInput").value = pattern.map(p=>p.join("")).join(","); }
+  if(savedIndex !== null) currentIndex = parseInt(savedIndex);
+  if(savedRules) colorRules = JSON.parse(savedRules);
+  if(savedRecent) recentColors = JSON.parse(savedRecent);
 
-    function loadPattern() {
-      const input = document.getElementById("patternInput").value.replace(/\s/g,'');
-      const rawItems = input.split(',');
-      pattern = [];
-      rawItems.forEach(item => {
-        if(item.length===0) return;
-        if(item.length===1){
-          const num = parseInt(item);
-          if(num>=1 && num<=6) pattern.push([num]);
-        } else {
-          const nums = item.split('').map(d=>parseInt(d)).filter(n=>n>=1 && n<=6);
-          if(nums.length) pattern.push(nums);
+  createTopColorBoxes();
+  updateDisplay();
+}
+
+function clearMemory(){
+  localStorage.removeItem("pattern");
+  localStorage.removeItem("currentIndex");
+  localStorage.removeItem("colorRules");
+  localStorage.removeItem("recentColors");
+  pattern=[]; currentIndex=0; colorRules=[]; recentColors=[];
+  createTopColorBoxes();
+  updateDisplay();
+}
+
+// --- Pattern Functions ---
+function loadPattern(){
+  const input = document.getElementById("patternInput").value.replace(/\s/g,'');
+  const rawItems = input.split(',');
+  pattern = [];
+  rawItems.forEach(item=>{
+    if(item.length===0) return;
+    if(item.length===1){ const num=parseInt(item); if(num>=1&&num<=6) pattern.push([num]); }
+    else{ const nums=item.split('').map(d=>parseInt(d)).filter(n=>n>=1&&n<=6); if(nums.length) pattern.push(nums); }
+  });
+  currentIndex=0;
+  updateDisplay();
+  saveProgress();
+}
+
+function updateDisplay(){
+  const pickInfo=document.getElementById("pickInfo");
+  for(let i=1;i<=6;i++){
+    const box=document.getElementById("box"+i);
+    box.textContent=""; box.classList.remove("highlight"); box.style.backgroundColor="#444"; box.style.color="white";
+  }
+  if(pattern.length===0){ pickInfo.innerText="Pick: 0 of 0"; return; }
+  const currentNumbers = pattern[currentIndex];
+  if(Array.isArray(currentNumbers)){
+    currentNumbers.forEach(num=>{
+      if(num>=1&&num<=6){
+        const activeBox=document.getElementById("box"+num);
+        activeBox.textContent=num;
+        activeBox.classList.add("highlight");
+        if(colorRules[num-1]){
+          activeBox.style.backgroundColor=colorRules[num-1];
+          activeBox.style.color=isColorLight(colorRules[num-1])?"black":"white";
         }
-      });
-      currentIndex = 0;
-      updateDisplay();
-      saveProgress();
-    }
-
-    function updateDisplay() {
-      const pickInfo = document.getElementById("pickInfo");
-      for(let i=1;i<=6;i++){
-        const box = document.getElementById("box"+i);
-        box.textContent = "";
-        box.classList.remove("highlight");
-        box.style.backgroundColor = "#444";
-        box.style.color = "white";
       }
-      if(pattern.length===0){
-        pickInfo.innerText="Pick: 0 of 0";
-        return;
-      }
-      const currentNumbers = pattern[currentIndex];
-      if(Array.isArray(currentNumbers)){
-        currentNumbers.forEach(num=>{
-          if(num>=1 && num<=6){
-            const activeBox = document.getElementById("box"+num);
-            activeBox.textContent = num;
-            activeBox.classList.add("highlight");
-            if(colorRules[num-1]){
-              activeBox.style.backgroundColor=colorRules[num-1];
-              activeBox.style.color=isColorLight(colorRules[num-1])?"black":"white";
-            }
-          }
-        });
-        if(currentNumbers.length===1) speakNumber(currentNumbers[0]);
-      }
-      pickInfo.innerText = `Pick: ${currentIndex+1} of ${pattern.length}`;
-      document.getElementById("progress").style.width = ((currentIndex+1)/pattern.length*100)+"%";
-      saveProgress();
-    }
+    });
+  }
+  pickInfo.innerText=`Pick: ${currentIndex+1} of ${pattern.length}`;
+  document.getElementById("progress").style.width=((currentIndex+1)/pattern.length*100)+"%";
+  saveProgress();
+}
 
-    function nextNumber(){if(!pattern.length) return; currentIndex=(currentIndex+1)%pattern.length; updateDisplay();}
-    function prevNumber(){if(!pattern.length) return; currentIndex=(currentIndex-1+pattern.length)%pattern.length; updateDisplay();}
-    function reset(){currentIndex=0; updateDisplay(); document.getElementById("progress").style.width="0%"; saveProgress();}
-    function jumpToPick(){const jumpVal=parseInt(document.getElementById("jumpInput").value); if(!isNaN(jumpVal)&&jumpVal>=1&&jumpVal<=pattern.length){currentIndex=jumpVal-1; updateDisplay();}}
-    function speakNumber(num){if(!document.getElementById("speakToggle").checked) return; const words=["one","two","three","four","five","six"]; new Audio(`${words[num-1]}.mp3`).play();}
-    function loadCustomSound(event){const file=event.target.files[0]; if(file) customAudio=URL.createObjectURL(file);}
+function nextNumber(){ if(!pattern.length) return; currentIndex=(currentIndex+1)%pattern.length; updateDisplay(); }
+function prevNumber(){ if(!pattern.length) return; currentIndex=(currentIndex-1+pattern.length)%pattern.length; updateDisplay(); }
+function reset(){ currentIndex=0; updateDisplay(); document.getElementById("progress").style.width="0%"; saveProgress(); }
+function jumpToPick(){ const jumpVal=parseInt(document.getElementById("jumpInput").value); if(!isNaN(jumpVal)&&jumpVal>=1&&jumpVal<=pattern.length){ currentIndex=jumpVal-1; updateDisplay(); } }
+function speakNumber(num){ if(!document.getElementById("speakToggle").checked) return; const words=["one","two","three","four","five","six"]; new Audio(`${words[num-1]}.mp3`).play(); }
+function loadCustomSound(event){ const file=event.target.files[0]; if(file) customAudio=URL.createObjectURL(file); }
 
-    // --- Top color boxes (simple click to pick color) ---
-    function createTopColorBoxes(){
-      const container = document.getElementById("colorSelectorTop");
-      container.innerHTML='';
-      for(let i=1;i<=6;i++){
-        const wrapper=document.createElement("div");
-        wrapper.style.display="flex";
-        wrapper.style.flexDirection="column";
-        wrapper.style.alignItems="center";
+// --- Color Picker Panel ---
+const paletteColors=["#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF","#00FFFF","#FFA500","#800080","#008000","#000080","#FFC0CB","#A52A2A","#808080","#000000","#FFFFFF","#808000"];
+let activeBoxIndex=null;
 
-        const box=document.createElement("div");
-        box.style.width="50px";
-        box.style.height="50px";
-        box.style.borderRadius="6px";
-        box.style.backgroundColor=colorRules[i-1]||"#444";
-        box.style.cursor="pointer";
-        box.title=`Number ${i}`;
+function createTopColorBoxes(){
+  const container=document.getElementById("colorSelectorTop");
+  container.innerHTML='';
+  for(let i=0;i<6;i++){
+    const box=document.createElement("div");
+    box.className="colorBox";
+    box.style.backgroundColor=colorRules[i]||"#444";
+    box.title=`Number ${i+1}`;
+    box.onclick=(e)=>{
+      activeBoxIndex=i;
+      openColorPicker(e.target);
+    };
+    container.appendChild(box);
+  }
+}
 
-        const colorInput=document.createElement("input");
-        colorInput.type="color";
-        colorInput.style.display="none";
-        colorInput.value=colorRules[i-1]||"#444";
+function openColorPicker(targetBox){
+  const panel=document.getElementById("colorPickerPanel");
+  panel.style.display="flex";
+  const rect=targetBox.getBoundingClientRect();
+  panel.style.top=(rect.bottom + window.scrollY + 5)+"px";
+  panel.style.left=(rect.left + window.scrollX)+"px";
 
-        box.onclick=()=>{
-          colorInput.style.display="block";
-          colorInput.click();
-        }
+  // Fill palette
+  const grid=document.getElementById("colorGrid");
+  grid.innerHTML='';
+  paletteColors.forEach(color=>{
+    const div=document.createElement("div");
+    div.className="colorOption"; div.style.backgroundColor=color;
+    div.onclick=()=>{ selectColor(color); };
+    grid.appendChild(div);
+  });
 
-        colorInput.oninput=()=>{
-          const newColor=colorInput.value;
-          box.style.backgroundColor=newColor;
-          colorRules[i-1]=newColor;
-          saveProgress();
-          updateDisplay();
-        }
+  // Fill recent colors
+  const recent=document.getElementById("recentColors");
+  recent.innerHTML='';
+  recentColors.forEach(color=>{
+    const div=document.createElement("div");
+    div.className="colorOption"; div.style.backgroundColor=color;
+    div.onclick=()=>{ selectColor(color); };
+    recent.appendChild(div);
+  });
+}
 
-        wrapper.appendChild(box);
-        wrapper.appendChild(colorInput);
-        container.appendChild(wrapper);
-      }
-    }
+function selectColor(color){
+  if(activeBoxIndex===null) return;
+  colorRules[activeBoxIndex]=color;
+  if(!recentColors.includes(color)) recentColors.unshift(color);
+  if(recentColors.length>12) recentColors.pop();
+  createTopColorBoxes();
+  updateDisplay();
+  saveProgress();
+  closeColorPicker();
+}
 
-    window.onload = loadProgress;
-  </script>
+function closeColorPicker(){
+  document.getElementById("colorPickerPanel").style.display="none";
+}
+
+window.onclick=(e)=>{
+  const panel=document.getElementById("colorPickerPanel");
+  if(!panel.contains(e.target) && !e.target.classList.contains("colorBox")){
+    closeColorPicker();
+  }
+}
+
+window.onload=loadProgress;
+</script>
 </body>
 </html>
