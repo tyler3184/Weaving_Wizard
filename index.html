@@ -45,9 +45,12 @@
     gap: 10px;
     z-index: 100;
   }
+  #hueBar { border-radius: 4px; }
+  #colorSpectrum { border-radius: 4px; }
   #recentColors {
     display: flex;
     gap: 5px;
+    margin-top: 5px;
   }
   .recentColorBox {
     width: 30px;
@@ -71,7 +74,6 @@
     text-align: center;
     background-color: #444;
     border-radius: 4px;
-    transition: background-color 0.1s ease, color 0.1s ease;
   }
   .highlight { color: black; }
   #pickInfo { margin-top: 10px; font-size: 18px; }
@@ -129,7 +131,8 @@
 
   <!-- Color picker panel -->
   <div id="colorPickerPanel">
-    <input type="color" id="fullColorPicker">
+    <canvas id="hueBar" width="250" height="20" style="cursor:pointer;"></canvas>
+    <canvas id="colorSpectrum" width="250" height="150" style="cursor:crosshair;"></canvas>
     <div id="recentColors"></div>
   </div>
 
@@ -144,7 +147,6 @@
   </div>
 
   <div id="pickInfo">Pick: 0 of 0</div>
-
   <div id="progressContainer"><div id="progress"></div></div>
 
   <div class="main-buttons">
@@ -241,27 +243,71 @@ function createTopColorBoxes(){
 }
 
 // --- Color Picker ---
-function openColorPicker(target){
-  const panel=document.getElementById("colorPickerPanel"), picker=document.getElementById("fullColorPicker");
-  panel.style.display="flex"; const rect=target.getBoundingClientRect();
-  panel.style.top=(rect.bottom+window.scrollY+5)+"px"; panel.style.left=(rect.left+window.scrollX)+"px";
-  picker.value=colorRules[activeBoxIndex]||"#ffffff";
-  picker.focus();
+const hueBar = document.getElementById("hueBar");
+const hueCtx = hueBar.getContext("2d");
+const spectrumCanvas = document.getElementById("colorSpectrum");
+const spectrumCtx = spectrumCanvas.getContext("2d");
+let currentHue=0; // 0-360
+
+function drawHueBar(){
+  const grad=hueCtx.createLinearGradient(0,0,hueBar.width,0);
+  const hueColors=["red","yellow","lime","cyan","blue","magenta","red"];
+  const stops=[0,0.17,0.33,0.5,0.67,0.83,1];
+  hueColors.forEach((c,i)=>grad.addColorStop(stops[i],c));
+  hueCtx.fillStyle=grad; hueCtx.fillRect(0,0,hueBar.width,hueBar.height);
 }
-document.getElementById("fullColorPicker").addEventListener("input", (e)=>{
+drawHueBar();
+
+function drawSpectrum(){
+  const w=spectrumCanvas.width,h=spectrumCanvas.height;
+  spectrumCtx.fillStyle=`hsl(${currentHue},100%,50%)`;
+  spectrumCtx.fillRect(0,0,w,h);
+  const gradSat=spectrumCtx.createLinearGradient(0,0,w,0);
+  gradSat.addColorStop(0,"#fff"); gradSat.addColorStop(1,"rgba(255,255,255,0)");
+  spectrumCtx.fillStyle=gradSat; spectrumCtx.fillRect(0,0,w,h);
+  const gradVal=spectrumCtx.createLinearGradient(0,0,0,h);
+  gradVal.addColorStop(0,"rgba(0,0,0,0)"); gradVal.addColorStop(1,"#000");
+  spectrumCtx.fillStyle=gradVal; spectrumCtx.fillRect(0,0,w,h);
+}
+
+// Hue bar click
+hueBar.addEventListener("click", e=>{
+  const rect=hueBar.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  currentHue=Math.round(x/hueBar.width*360);
+  drawSpectrum();
+});
+
+// Spectrum click
+spectrumCanvas.addEventListener("click", e=>{
   if(activeBoxIndex===null) return;
-  colorRules[activeBoxIndex]=e.target.value;
-  recentColors.unshift(e.target.value);
-  if(recentColors.length>5) recentColors.pop();
+  const rect=spectrumCanvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+  const p=spectrumCtx.getImageData(x,y,1,1).data;
+  const hex=`#${((1<<24)+(p[0]<<16)+(p[1]<<8)+p[2]).toString(16).slice(1)}`;
+  colorRules[activeBoxIndex]=hex;
+  recentColors.unshift(hex); if(recentColors.length>5) recentColors.pop();
   createTopColorBoxes(); updateDisplay(); updateRecentColors(); saveProgress();
 });
 
+function openColorPicker(target){
+  const panel=document.getElementById("colorPickerPanel");
+  panel.style.display="flex";
+  const rect=target.getBoundingClientRect();
+  panel.style.top=(rect.bottom+window.scrollY+5)+"px";
+  panel.style.left=(rect.left+window.scrollX)+"px";
+  drawSpectrum();
+}
 function updateRecentColors(){
   const recent=document.getElementById("recentColors"); recent.innerHTML='';
-  recentColors.forEach(c=>{const div=document.createElement("div"); div.className="recentColorBox"; div.style.backgroundColor=c; div.onclick=()=>{if(activeBoxIndex===null) return; colorRules[activeBoxIndex]=c; createTopColorBoxes(); updateDisplay(); saveProgress(); closeColorPicker();}; recent.appendChild(div);});
+  recentColors.forEach(c=>{
+    const div=document.createElement("div"); div.className="recentColorBox"; div.style.backgroundColor=c;
+    div.onclick=()=>{if(activeBoxIndex===null) return; colorRules[activeBoxIndex]=c; createTopColorBoxes(); updateDisplay(); saveProgress();}
+    recent.appendChild(div);
+  });
 }
 function closeColorPicker(){document.getElementById("colorPickerPanel").style.display="none";}
-
 window.onclick=(e)=>{
   const panel=document.getElementById("colorPickerPanel");
   if(!panel.contains(e.target) && !e.target.classList.contains("colorBox")) closeColorPicker();
