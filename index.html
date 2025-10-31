@@ -33,31 +33,28 @@
     height: 50px;
     border-radius: 6px;
     cursor: pointer;
+    border: 2px solid #555;
   }
   #colorPickerPanel {
     position: absolute;
+    display: none;
     background-color: #333;
     padding: 10px;
     border-radius: 6px;
-    display: none;
     flex-direction: column;
     gap: 10px;
     z-index: 100;
   }
-  #colorGrid {
-    display: grid;
-    grid-template-columns: repeat(8, 30px);
-    gap: 5px;
-  }
-  .colorOption {
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    border-radius: 4px;
-  }
   #recentColors {
     display: flex;
     gap: 5px;
+  }
+  .recentColorBox {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #555;
   }
   #numberBoxes {
     display: flex;
@@ -129,8 +126,10 @@
 
   <!-- Top color selector -->
   <div id="colorSelectorTop"></div>
+
+  <!-- Color picker panel -->
   <div id="colorPickerPanel">
-    <div id="colorGrid"></div>
+    <input type="color" id="fullColorPicker">
     <div id="recentColors"></div>
   </div>
 
@@ -184,19 +183,12 @@
 </div>
 
 <script>
-let pattern = [];
-let currentIndex = 0;
-let customAudio = null;
-let colorRules = [];
-let recentColors = [];
+let pattern=[], currentIndex=0, customAudio=null, colorRules=[], recentColors=[];
+let activeBoxIndex=null;
 
-// --- Helper Functions ---
+// --- Helpers ---
 function isColorLight(hex){
-  const c=hex.substring(1);
-  const rgb=parseInt(c,16);
-  const r=(rgb>>16)&0xff;
-  const g=(rgb>>8)&0xff;
-  const b=(rgb>>0)&0xff;
+  const c=hex.substring(1), rgb=parseInt(c,16), r=(rgb>>16)&0xff, g=(rgb>>8)&0xff, b=(rgb>>0)&0xff;
   return 0.2126*r + 0.7152*g + 0.0722*b > 150;
 }
 
@@ -207,148 +199,72 @@ function saveProgress(){
   localStorage.setItem("colorRules",JSON.stringify(colorRules));
   localStorage.setItem("recentColors",JSON.stringify(recentColors));
 }
-
 function loadProgress(){
-  const savedPattern = localStorage.getItem("pattern");
-  const savedIndex = localStorage.getItem("currentIndex");
-  const savedRules = localStorage.getItem("colorRules");
-  const savedRecent = localStorage.getItem("recentColors");
-
-  if(savedPattern){ pattern = JSON.parse(savedPattern); document.getElementById("patternInput").value = pattern.map(p=>p.join("")).join(","); }
-  if(savedIndex !== null) currentIndex = parseInt(savedIndex);
-  if(savedRules) colorRules = JSON.parse(savedRules);
-  if(savedRecent) recentColors = JSON.parse(savedRecent);
-
-  createTopColorBoxes();
-  updateDisplay();
+  const savedPattern=localStorage.getItem("pattern"), savedIndex=localStorage.getItem("currentIndex"),
+        savedRules=localStorage.getItem("colorRules"), savedRecent=localStorage.getItem("recentColors");
+  if(savedPattern){pattern=JSON.parse(savedPattern); document.getElementById("patternInput").value=pattern.map(p=>p.join("")).join(",");}
+  if(savedIndex!==null) currentIndex=parseInt(savedIndex);
+  if(savedRules) colorRules=JSON.parse(savedRules);
+  if(savedRecent) recentColors=JSON.parse(savedRecent);
+  createTopColorBoxes(); updateDisplay();
 }
-
-function clearMemory(){
-  localStorage.removeItem("pattern");
-  localStorage.removeItem("currentIndex");
-  localStorage.removeItem("colorRules");
-  localStorage.removeItem("recentColors");
-  pattern=[]; currentIndex=0; colorRules=[]; recentColors=[];
-  createTopColorBoxes();
-  updateDisplay();
-}
+function clearMemory(){localStorage.clear(); pattern=[];currentIndex=0;colorRules=[];recentColors=[]; createTopColorBoxes(); updateDisplay();}
 
 // --- Pattern Functions ---
 function loadPattern(){
-  const input = document.getElementById("patternInput").value.replace(/\s/g,'');
-  const rawItems = input.split(',');
-  pattern = [];
-  rawItems.forEach(item=>{
-    if(item.length===0) return;
-    if(item.length===1){ const num=parseInt(item); if(num>=1&&num<=6) pattern.push([num]); }
-    else{ const nums=item.split('').map(d=>parseInt(d)).filter(n=>n>=1&&n<=6); if(nums.length) pattern.push(nums); }
-  });
-  currentIndex=0;
-  updateDisplay();
-  saveProgress();
+  const input=document.getElementById("patternInput").value.replace(/\s/g,''), rawItems=input.split(',');
+  pattern=[]; rawItems.forEach(item=>{if(item.length===0) return; if(item.length===1){const num=parseInt(item);if(num>=1&&num<=6) pattern.push([num]);} else {const nums=item.split('').map(d=>parseInt(d)).filter(n=>n>=1&&n<=6);if(nums.length) pattern.push(nums);}}); currentIndex=0; updateDisplay(); saveProgress();
 }
-
 function updateDisplay(){
-  const pickInfo=document.getElementById("pickInfo");
-  for(let i=1;i<=6;i++){
-    const box=document.getElementById("box"+i);
-    box.textContent=""; box.classList.remove("highlight"); box.style.backgroundColor="#444"; box.style.color="white";
-  }
-  if(pattern.length===0){ pickInfo.innerText="Pick: 0 of 0"; return; }
-  const currentNumbers = pattern[currentIndex];
-  if(Array.isArray(currentNumbers)){
-    currentNumbers.forEach(num=>{
-      if(num>=1&&num<=6){
-        const activeBox=document.getElementById("box"+num);
-        activeBox.textContent=num;
-        activeBox.classList.add("highlight");
-        if(colorRules[num-1]){
-          activeBox.style.backgroundColor=colorRules[num-1];
-          activeBox.style.color=isColorLight(colorRules[num-1])?"black":"white";
-        }
-      }
-    });
-  }
-  pickInfo.innerText=`Pick: ${currentIndex+1} of ${pattern.length}`;
+  for(let i=1;i<=6;i++){const box=document.getElementById("box"+i); box.textContent=""; box.classList.remove("highlight"); box.style.backgroundColor="#444"; box.style.color="white";}
+  if(pattern.length===0){document.getElementById("pickInfo").innerText="Pick: 0 of 0"; return;}
+  const currentNumbers=pattern[currentIndex]; if(Array.isArray(currentNumbers)){currentNumbers.forEach(num=>{if(num>=1&&num<=6){const b=document.getElementById("box"+num); b.textContent=num; b.classList.add("highlight"); if(colorRules[num-1]){b.style.backgroundColor=colorRules[num-1]; b.style.color=isColorLight(colorRules[num-1])?"black":"white";}}});}
+  document.getElementById("pickInfo").innerText=`Pick: ${currentIndex+1} of ${pattern.length}`;
   document.getElementById("progress").style.width=((currentIndex+1)/pattern.length*100)+"%";
   saveProgress();
 }
+function nextNumber(){if(!pattern.length) return; currentIndex=(currentIndex+1)%pattern.length; updateDisplay();}
+function prevNumber(){if(!pattern.length) return; currentIndex=(currentIndex-1+pattern.length)%pattern.length; updateDisplay();}
+function reset(){currentIndex=0; updateDisplay(); document.getElementById("progress").style.width="0%"; saveProgress();}
+function jumpToPick(){const j=parseInt(document.getElementById("jumpInput").value); if(!isNaN(j)&&j>=1&&j<=pattern.length){currentIndex=j-1; updateDisplay();}}
+function speakNumber(num){if(!document.getElementById("speakToggle").checked) return; const words=["one","two","three","four","five","six"]; new Audio(`${words[num-1]}.mp3`).play();}
+function loadCustomSound(e){const file=e.target.files[0]; if(file) customAudio=URL.createObjectURL(file);}
 
-function nextNumber(){ if(!pattern.length) return; currentIndex=(currentIndex+1)%pattern.length; updateDisplay(); }
-function prevNumber(){ if(!pattern.length) return; currentIndex=(currentIndex-1+pattern.length)%pattern.length; updateDisplay(); }
-function reset(){ currentIndex=0; updateDisplay(); document.getElementById("progress").style.width="0%"; saveProgress(); }
-function jumpToPick(){ const jumpVal=parseInt(document.getElementById("jumpInput").value); if(!isNaN(jumpVal)&&jumpVal>=1&&jumpVal<=pattern.length){ currentIndex=jumpVal-1; updateDisplay(); } }
-function speakNumber(num){ if(!document.getElementById("speakToggle").checked) return; const words=["one","two","three","four","five","six"]; new Audio(`${words[num-1]}.mp3`).play(); }
-function loadCustomSound(event){ const file=event.target.files[0]; if(file) customAudio=URL.createObjectURL(file); }
-
-// --- Color Picker Panel ---
-const paletteColors=["#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF","#00FFFF","#FFA500","#800080","#008000","#000080","#FFC0CB","#A52A2A","#808080","#000000","#FFFFFF","#808000"];
-let activeBoxIndex=null;
-
+// --- Top color boxes ---
 function createTopColorBoxes(){
-  const container=document.getElementById("colorSelectorTop");
-  container.innerHTML='';
+  const container=document.getElementById("colorSelectorTop"); container.innerHTML='';
   for(let i=0;i<6;i++){
-    const box=document.createElement("div");
-    box.className="colorBox";
-    box.style.backgroundColor=colorRules[i]||"#444";
-    box.title=`Number ${i+1}`;
-    box.onclick=(e)=>{
-      activeBoxIndex=i;
-      openColorPicker(e.target);
-    };
+    const box=document.createElement("div"); box.className="colorBox"; box.style.backgroundColor=colorRules[i]||"#444"; box.title=`Number ${i+1}`;
+    box.onclick=(e)=>{activeBoxIndex=i; openColorPicker(e.target);};
     container.appendChild(box);
   }
 }
 
-function openColorPicker(targetBox){
-  const panel=document.getElementById("colorPickerPanel");
-  panel.style.display="flex";
-  const rect=targetBox.getBoundingClientRect();
-  panel.style.top=(rect.bottom + window.scrollY + 5)+"px";
-  panel.style.left=(rect.left + window.scrollX)+"px";
-
-  // Fill palette
-  const grid=document.getElementById("colorGrid");
-  grid.innerHTML='';
-  paletteColors.forEach(color=>{
-    const div=document.createElement("div");
-    div.className="colorOption"; div.style.backgroundColor=color;
-    div.onclick=()=>{ selectColor(color); };
-    grid.appendChild(div);
-  });
-
-  // Fill recent colors
-  const recent=document.getElementById("recentColors");
-  recent.innerHTML='';
-  recentColors.forEach(color=>{
-    const div=document.createElement("div");
-    div.className="colorOption"; div.style.backgroundColor=color;
-    div.onclick=()=>{ selectColor(color); };
-    recent.appendChild(div);
-  });
+// --- Color Picker ---
+function openColorPicker(target){
+  const panel=document.getElementById("colorPickerPanel"), picker=document.getElementById("fullColorPicker");
+  panel.style.display="flex"; const rect=target.getBoundingClientRect();
+  panel.style.top=(rect.bottom+window.scrollY+5)+"px"; panel.style.left=(rect.left+window.scrollX)+"px";
+  picker.value=colorRules[activeBoxIndex]||"#ffffff";
+  picker.focus();
 }
-
-function selectColor(color){
+document.getElementById("fullColorPicker").addEventListener("input", (e)=>{
   if(activeBoxIndex===null) return;
-  colorRules[activeBoxIndex]=color;
-  if(!recentColors.includes(color)) recentColors.unshift(color);
-  if(recentColors.length>12) recentColors.pop();
-  createTopColorBoxes();
-  updateDisplay();
-  saveProgress();
-  closeColorPicker();
-}
+  colorRules[activeBoxIndex]=e.target.value;
+  recentColors.unshift(e.target.value);
+  if(recentColors.length>5) recentColors.pop();
+  createTopColorBoxes(); updateDisplay(); updateRecentColors(); saveProgress();
+});
 
-function closeColorPicker(){
-  document.getElementById("colorPickerPanel").style.display="none";
+function updateRecentColors(){
+  const recent=document.getElementById("recentColors"); recent.innerHTML='';
+  recentColors.forEach(c=>{const div=document.createElement("div"); div.className="recentColorBox"; div.style.backgroundColor=c; div.onclick=()=>{if(activeBoxIndex===null) return; colorRules[activeBoxIndex]=c; createTopColorBoxes(); updateDisplay(); saveProgress(); closeColorPicker();}; recent.appendChild(div);});
 }
+function closeColorPicker(){document.getElementById("colorPickerPanel").style.display="none";}
 
 window.onclick=(e)=>{
   const panel=document.getElementById("colorPickerPanel");
-  if(!panel.contains(e.target) && !e.target.classList.contains("colorBox")){
-    closeColorPicker();
-  }
+  if(!panel.contains(e.target) && !e.target.classList.contains("colorBox")) closeColorPicker();
 }
 
 window.onload=loadProgress;
