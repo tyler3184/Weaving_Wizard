@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weaving Wizard</title>
+
 <style>
 body {
   font-family: Arial, sans-serif;
   background-color: #1a1a1a;
   color: #f0f0f0;
-  margin: 0;
   padding: 30px;
 }
 #container {
@@ -18,17 +18,30 @@ body {
   border-radius: 12px;
   max-width: 900px;
   margin: auto;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.5);
 }
-h1 { margin-top: 0; }
 
-/* Number boxes */
+/* ---------- TOP COLOR BOXES ---------- */
+#colorSelectorTop {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  position: relative;
+}
+.color-box {
+  flex: 1;
+  margin: 0 5px;
+  height: 40px;
+  border-radius: 6px;
+  border: 2px solid #666;
+  background: #444;
+  cursor: pointer;
+}
+
+/* ---------- NUMBER BOXES ---------- */
 #numberBoxes {
   display: flex;
   justify-content: space-between;
   margin: 20px auto;
-  width: 100%;
-  cursor: pointer;
 }
 .numberBox {
   flex: 1;
@@ -41,73 +54,91 @@ h1 { margin-top: 0; }
   border-radius: 8px;
 }
 
-/* Top color boxes */
-#colorSelectorTop {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  position: relative;
-}
-.color-box {
-  flex: 1;
-  margin: 0 5px;
-  height: 40px;
+/* ---------- PROGRESS ---------- */
+#progressContainer {
+  width: 100%;
+  background: #333;
+  height: 10px;
   border-radius: 6px;
-  border: 2px solid #666;
-  cursor: pointer;
+  margin-top: 10px;
+}
+#progress {
+  height: 10px;
+  background: limegreen;
+  width: 0%;
+  border-radius: 6px;
 }
 
-/* Color picker dropdown */
+/* ---------- COLOR PICKER ---------- */
 .color-picker-dropdown {
   position: absolute;
   display: none;
   background: #222;
   border-radius: 12px;
   padding: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.6);
-  z-index: 20;
-  width: 320px;
+  width: 340px;
+  z-index: 50;
+  text-align: center;
 }
 
-.spectrum, .brightness {
-  width: 100%;
+/* Hue slider */
+#hueSlider {
+  width: 300px;
+  height: 12px; /* thinner */
+  margin-bottom: 15px;
+  cursor: pointer;
+  border-radius: 6px; /* rounded corners */
+}
+#hueHandle {
+  position: absolute;
+  width: 14px;
+  height: 16px;
+  background: white;
+  border: 2px solid black;
+  border-radius: 4px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Saturation-Brightness box */
+#sbCanvas {
+  width: 300px;
+  height: 140px;
+  margin: 0 auto; /* center in dropdown */
   position: relative;
   cursor: crosshair;
-  border-radius: 8px;
-  margin-bottom: 12px;
 }
-.spectrum { height: 20px; }
-.brightness { height: 140px; }
-
-.spectrum-dot, .brightness-dot {
+#sbHandle {
+  position: absolute;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid white;
-  position: absolute;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
+  border: 2px solid black;
   background: white;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  top: 0;
+  left: 0;
 }
 
+/* Recent colors */
 #recentColors {
   display: flex;
   gap: 6px;
   margin-top: 10px;
+  justify-content: center;
 }
 .recent-color {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
-  border: 1px solid #888;
+  border: 1px solid #777;
   cursor: pointer;
 }
 
-#pickInfo { margin-top: 10px; font-size: 18px; }
-
+/* Buttons */
 .main-buttons {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
   margin-top: 20px;
@@ -122,28 +153,6 @@ h1 { margin-top: 0; }
   cursor: pointer;
 }
 
-#progressContainer {
-  width: 100%;
-  background: #333;
-  height: 10px;
-  margin-top: 20px;
-  border-radius: 6px;
-}
-#progress {
-  height: 10px;
-  background: limegreen;
-  width: 0%;
-  border-radius: 6px;
-}
-
-input[type="text"], input[type="number"], input[type="file"] {
-  padding: 6px;
-  font-size: 16px;
-  border-radius: 4px;
-  border: none;
-  margin: 5px;
-}
-label { font-size: 16px; }
 .card {
   background-color: #3a3a3a;
   padding: 20px;
@@ -152,253 +161,224 @@ label { font-size: 16px; }
 }
 </style>
 </head>
+
 <body>
 <div id="container">
-  <h1>Weaving Wizard</h1>
+<h1>Weaving Wizard</h1>
 
-  <div id="colorSelectorTop"></div>
+<!-- Top color boxes -->
+<div id="colorSelectorTop"></div>
 
-  <div id="colorPicker" class="color-picker-dropdown">
-    <div class="spectrum">
-      <canvas id="spectrumCanvas"></canvas>
-      <div class="spectrum-dot"></div>
-    </div>
-    <div class="brightness">
-      <canvas id="brightnessCanvas"></canvas>
-      <div class="brightness-dot"></div>
-    </div>
-    <div id="recentColors"></div>
+<!-- Color picker dropdown -->
+<div id="colorPicker" class="color-picker-dropdown">
+  <!-- Hue slider -->
+  <div style="position:relative;">
+    <canvas id="hueSlider"></canvas>
+    <div id="hueHandle"></div>
   </div>
 
-  <div id="numberBoxes">
-    <div class="numberBox" id="box1" onclick="nextNumber()"></div>
-    <div class="numberBox" id="box2" onclick="nextNumber()"></div>
-    <div class="numberBox" id="box3" onclick="nextNumber()"></div>
-    <div class="numberBox" id="box4" onclick="nextNumber()"></div>
-    <div class="numberBox" id="box5" onclick="nextNumber()"></div>
-    <div class="numberBox" id="box6" onclick="nextNumber()"></div>
+  <!-- Saturation-Brightness box -->
+  <div style="position:relative; margin: 0 auto;">
+    <canvas id="sbCanvas"></canvas>
+    <div id="sbHandle"></div>
   </div>
 
-  <div id="pickInfo">Pick: 0 of 0</div>
-  <div id="progressContainer"><div id="progress"></div></div>
+  <!-- Recent colors -->
+  <div id="recentColors"></div>
+</div>
 
-  <div class="main-buttons">
-    <button onclick="nextNumber()">Next</button>
-    <button onclick="prevNumber()">Previous</button>
-    <button onclick="reset()">Reset</button>
-    <button onclick="clearMemory()">Clear Memory</button>
-  </div>
+<div id="numberBoxes">
+  <div class="numberBox" id="box1" onclick="nextNumber()"></div>
+  <div class="numberBox" id="box2" onclick="nextNumber()"></div>
+  <div class="numberBox" id="box3" onclick="nextNumber()"></div>
+  <div class="numberBox" id="box4" onclick="nextNumber()"></div>
+  <div class="numberBox" id="box5" onclick="nextNumber()"></div>
+  <div class="numberBox" id="box6" onclick="nextNumber()"></div>
+</div>
 
-  <div class="card">
-    <label for="patternInput">Enter Pattern (comma-separated):</label><br>
-    <input type="text" id="patternInput" placeholder="e.g. 1,2,3,4">
-    <button onclick="loadPattern()">Load Pattern</button>
-    <div style="margin-top: 20px;">
-      <label for="jumpInput">Jump to Pick:</label><br>
-      <input type="number" id="jumpInput" style="width: 80px;" min="1">
-      <button onclick="jumpToPick()">Go</button>
-    </div>
-  </div>
+<div id="pickInfo">Pick: 0 of 0</div>
+<div id="progressContainer"><div id="progress"></div></div>
+
+<div class="main-buttons">
+  <button onclick="nextNumber()">Next</button>
+  <button onclick="prevNumber()">Previous</button>
+  <button onclick="reset()">Reset</button>
+  <button onclick="clearMemory()">Clear Memory</button>
+</div>
+
+<div class="card">
+  <label>Pattern:</label><br>
+  <input type="text" id="patternInput">
+  <button onclick="loadPattern()">Load</button>
+</div>
 </div>
 
 <script>
-let pattern=[], currentIndex=0, colorRules=[], recentColors=[];
-let activeBox=null, hue=0, sat=100, bright=50;
-let draggingSpectrum=false, draggingBrightness=false;
+let pattern=[], currentIndex=0;
+let colorRules=Array(6).fill("#444");
+let recentColors=[];
+let activeBox=null;
+let hue=0, sat=100, bright=50;
+let draggingHue=false, draggingSB=false;
 
-// --- Pattern functions ---
+/* ---------- TOP COLOR BOXES ---------- */
+function createTopColorBoxes(){
+  const topDiv=document.getElementById("colorSelectorTop");
+  topDiv.innerHTML='';
+  for(let i=0;i<6;i++){
+    const box=document.createElement("div");
+    box.className="color-box";
+    box.style.background=colorRules[i];
+    box.onclick=()=>{activeBox=box; openPicker(box);};
+    topDiv.appendChild(box);
+  }
+}
+
+/* ---------- COLOR PICKER ---------- */
+const colorPicker=document.getElementById("colorPicker");
+const hueSlider=document.getElementById("hueSlider");
+const hueCtx=hueSlider.getContext("2d");
+const hueHandle=document.getElementById("hueHandle");
+
+const sbCanvas=document.getElementById("sbCanvas");
+const sbCtx=sbCanvas.getContext("2d");
+const sbHandle=document.getElementById("sbHandle");
+
+const recentDiv=document.getElementById("recentColors");
+
+function openPicker(box){
+  colorPicker.style.display='block';
+  const r=box.getBoundingClientRect();
+  colorPicker.style.left=r.left+'px';
+  colorPicker.style.top=r.bottom+window.scrollY+'px';
+  drawHue();
+  drawSB();
+  updateRecent();
+}
+
+document.addEventListener("click", e=>{
+  if(!colorPicker.contains(e.target) && !e.target.classList.contains("color-box"))
+    colorPicker.style.display='none';
+});
+
+/* ---------- HUE SLIDER ---------- */
+function drawHue(){
+  hueSlider.width=300;
+  hueSlider.height=12;
+  const grad=hueCtx.createLinearGradient(0,0,300,0);
+  ["red","yellow","lime","cyan","blue","magenta","red"].forEach((c,i)=>grad.addColorStop(i/6,c));
+  hueCtx.fillStyle=grad;
+  hueCtx.fillRect(0,0,300,12);
+}
+
+hueSlider.addEventListener("mousedown", e=>{draggingHue=true; moveHue(e);});
+document.addEventListener("mousemove", e=>{if(draggingHue) moveHue(e);});
+document.addEventListener("mouseup", ()=>draggingHue=false);
+
+function moveHue(e){
+  const rect=hueSlider.getBoundingClientRect();
+  let x=Math.max(0, Math.min(e.clientX-rect.left, rect.width));
+  hue=x/rect.width*360;
+  hueHandle.style.left=x+"px";
+  hueHandle.style.top=(rect.height/2)+"px";
+  drawSB();
+  updateColor();
+}
+
+/* ---------- SATURATION-BRIGHTNESS BOX ---------- */
+function drawSB(){
+  sbCanvas.width=300;
+  sbCanvas.height=140;
+  for(let y=0;y<140;y++){
+    for(let x=0;x<300;x++){
+      const s=(x/300)*100;
+      const l=100-(y/140)*100;
+      const rgb=hslToRgb(hue,s,l);
+      sbCtx.fillStyle=`rgb(${rgb})`;
+      sbCtx.fillRect(x,y,1,1);
+    }
+  }
+}
+
+sbCanvas.addEventListener("mousedown", e=>{draggingSB=true; moveSB(e);});
+document.addEventListener("mousemove", e=>{if(draggingSB) moveSB(e);});
+document.addEventListener("mouseup", ()=>draggingSB=false);
+
+function moveSB(e){
+  const rect=sbCanvas.getBoundingClientRect();
+  let x=Math.max(0, Math.min(e.clientX-rect.left, rect.width));
+  let y=Math.max(0, Math.min(e.clientY-rect.top, rect.height));
+  sbHandle.style.left=x+"px";
+  sbHandle.style.top=y+"px";
+  sat=(x/rect.width)*100;
+  bright=100-(y/rect.height)*100;
+  updateColor();
+}
+
+/* ---------- UPDATE COLOR ---------- */
+function updateColor(){
+  if(!activeBox) return;
+  const c=`hsl(${hue},${sat}%,${bright}%)`;
+  activeBox.style.background=c;
+  const i=[...document.querySelectorAll(".color-box")].indexOf(activeBox);
+  colorRules[i]=c;
+
+  if(!recentColors.includes(c)){
+    recentColors.unshift(c);
+    if(recentColors.length>5) recentColors.pop();
+  }
+  updateRecent();
+  updateDisplay();
+}
+
+/* ---------- RECENT COLORS ---------- */
+function updateRecent(){
+  recentDiv.innerHTML='';
+  recentColors.forEach(c=>{
+    const d=document.createElement("div");
+    d.className="recent-color";
+    d.style.background=c;
+    d.onclick=()=>{activeBox.style.background=c; updateColor();}
+    recentDiv.appendChild(d);
+  });
+}
+
+/* ---------- PATTERN ---------- */
 function loadPattern(){
-  const input=document.getElementById("patternInput").value.replace(/\s/g,'');
-  const items=input.split(',');
-  pattern=items.map(p=>p.split('').map(Number).filter(n=>n>=1&&n<=6)).filter(p=>p.length);
-  currentIndex=0; updateDisplay(); saveProgress();
+  pattern=patternInput.value.split(',').map(p=>p.split('').map(Number));
+  currentIndex=0; updateDisplay();
 }
 
 function updateDisplay(){
   for(let i=1;i<=6;i++){
-    const box=document.getElementById("box"+i);
-    box.textContent=""; 
-    box.style.backgroundColor="#444"; 
-    box.style.color="white";
+    const b=document.getElementById("box"+i);
+    b.textContent=''; b.style.background='#444';
   }
-  if(!pattern.length){document.getElementById("pickInfo").innerText="Pick: 0 of 0"; return;}
-  const current=pattern[currentIndex];
-  current.forEach(num=>{
-    const b=document.getElementById("box"+num);
-    b.textContent=num;
-    if(colorRules[num-1]) b.style.backgroundColor=colorRules[num-1];
-    const rgb=b.style.backgroundColor.match(/\d+/g);
-    if(rgb){
-      const brightness=(parseInt(rgb[0])*299+parseInt(rgb[1])*587+parseInt(rgb[2])*114)/1000;
-      b.style.color=brightness>128?"black":"white";
-    }
+  if(!pattern.length){progress.style.width="0%";return;}
+  pattern[currentIndex].forEach(n=>{
+    const b=document.getElementById("box"+n);
+    b.textContent=n;
+    b.style.background=colorRules[n-1];
   });
-  document.getElementById("pickInfo").innerText=`Pick: ${currentIndex+1} of ${pattern.length}`;
-  document.getElementById("progress").style.width=((currentIndex+1)/pattern.length*100)+"%";
-  saveProgress();
+  pickInfo.innerText=`Pick: ${currentIndex+1} of ${pattern.length}`;
+  progress.style.width=((currentIndex+1)/pattern.length*100)+"%";
 }
 
-function nextNumber(){if(!pattern.length)return; currentIndex=(currentIndex+1)%pattern.length; updateDisplay();}
-function prevNumber(){if(!pattern.length)return; currentIndex=(currentIndex-1+pattern.length)%pattern.length; updateDisplay();}
-function reset(){currentIndex=0; updateDisplay(); document.getElementById("progress").style.width="0%"; saveProgress();}
-function saveProgress(){
-  localStorage.setItem("pattern",JSON.stringify(pattern));
-  localStorage.setItem("currentIndex",currentIndex);
-  localStorage.setItem("colorRules",JSON.stringify(colorRules));
-  localStorage.setItem("recentColors",JSON.stringify(recentColors));
-}
+function nextNumber(){if(pattern.length){currentIndex=(currentIndex+1)%pattern.length;updateDisplay();}}
+function prevNumber(){if(pattern.length){currentIndex=(currentIndex-1+pattern.length)%pattern.length;updateDisplay();}}
+function reset(){currentIndex=0;updateDisplay();}
+function clearMemory(){pattern=[];updateDisplay();}
 
-function loadProgress(){
-  const savedPattern=localStorage.getItem("pattern");
-  const savedIndex=localStorage.getItem("currentIndex");
-  const savedRules=localStorage.getItem("colorRules");
-  const savedRecent=localStorage.getItem("recentColors");
-  if(savedPattern) pattern=JSON.parse(savedPattern);
-  if(savedIndex!==null) currentIndex=parseInt(savedIndex);
-  if(savedRules) colorRules=JSON.parse(savedRules);
-  if(savedRecent) recentColors=JSON.parse(savedRecent);
-  createTopColorBoxes(); updateDisplay(); updateRecentColors();
-}
-
-function clearMemory(){localStorage.clear(); pattern=[]; currentIndex=0; colorRules=[]; recentColors=[]; createTopColorBoxes(); updateDisplay();}
-
-// --- Color boxes ---
-function createTopColorBoxes(){
-  const cont=document.getElementById("colorSelectorTop");
-  cont.innerHTML='';
-  for(let i=0;i<6;i++){
-    const box=document.createElement("div");
-    box.className="color-box";
-    box.style.backgroundColor=colorRules[i]||"#444";
-    box.onclick=(e)=>{activeBox=box; openColorPicker(box);};
-    cont.appendChild(box);
-  }
-}
-
-// --- Color picker ---
-function openColorPicker(box){
-  const picker=document.getElementById("colorPicker");
-  picker.style.display='block';
-  const rect=box.getBoundingClientRect();
-  picker.style.left=rect.left+'px';
-  picker.style.top=rect.bottom + window.scrollY + 'px';
-  drawSpectrum(); drawBrightness(); updateRecentColors();
-}
-
-document.addEventListener('click', e=>{
-  const picker=document.getElementById("colorPicker");
-  if(!picker.contains(e.target) && !e.target.classList.contains("color-box")){
-    picker.style.display='none';
-  }
-});
-
-// --- Spectrum ---
-const spectrumCanvas=document.getElementById("spectrumCanvas");
-const sCtx=spectrumCanvas.getContext("2d");
-const spectrumDot=document.querySelector('.spectrum-dot');
-
-function drawSpectrum(){
-  spectrumCanvas.width=spectrumCanvas.parentElement.offsetWidth;
-  spectrumCanvas.height=20;
-  const grad=sCtx.createLinearGradient(0,0,spectrumCanvas.width,0);
-  ["red","yellow","lime","cyan","blue","magenta","red"].forEach((c,i)=>grad.addColorStop(i/6,c));
-  sCtx.fillStyle=grad; sCtx.fillRect(0,0,spectrumCanvas.width,spectrumCanvas.height);
-}
-
-function pickSpectrum(e){
-  draggingSpectrum=true;
-  const rect=spectrumCanvas.getBoundingClientRect();
-  let x=Math.min(Math.max(e.clientX-rect.left,0),rect.width);
-  spectrumDot.style.left=x+'px'; spectrumDot.style.top='50%';
-  hue=x/rect.width*360;
-  drawBrightness();
-  updateActiveBoxColor();
-}
-spectrumCanvas.addEventListener('mousedown', pickSpectrum);
-document.addEventListener('mousemove', e=>{if(draggingSpectrum) pickSpectrum(e);});
-document.addEventListener('mouseup', ()=>draggingSpectrum=false);
-
-// --- Brightness ---
-const brightnessCanvas=document.getElementById("brightnessCanvas");
-const bCtx=brightnessCanvas.getContext("2d");
-const brightnessDot=document.querySelector('.brightness-dot');
-
-function drawBrightness(){
-  brightnessCanvas.width=brightnessCanvas.parentElement.offsetWidth;
-  brightnessCanvas.height=brightnessCanvas.parentElement.offsetHeight;
-  const width=brightnessCanvas.width;
-  const height=brightnessCanvas.height;
-  const image=bCtx.createImageData(width,height);
-  for(let y=0;y<height;y++){
-    for(let x=0;x<width;x++){
-      const s=x/width*100;
-      const l=100-(y/height*100);
-      const rgb=hslToRgb(hue,s,l);
-      const index=(y*width+x)*4;
-      image.data[index]=rgb[0];
-      image.data[index+1]=rgb[1];
-      image.data[index+2]=rgb[2];
-      image.data[index+3]=255;
-    }
-  }
-  bCtx.putImageData(image,0,0);
-}
-
-function pickBrightness(e){
-  draggingBrightness=true;
-  const rect=brightnessCanvas.getBoundingClientRect();
-  let x=Math.min(Math.max(e.clientX-rect.left,0),rect.width);
-  let y=Math.min(Math.max(e.clientY-rect.top,0),rect.height);
-  brightnessDot.style.left=x+'px'; brightnessDot.style.top=y+'px';
-  sat=x/rect.width*100;
-  bright=100-(y/rect.height*100);
-  updateActiveBoxColor();
-}
-brightnessCanvas.addEventListener('mousedown', pickBrightness);
-document.addEventListener('mousemove', e=>{if(draggingBrightness) pickBrightness(e);});
-document.addEventListener('mouseup', ()=>draggingBrightness=false);
-
-// --- Active box color ---
-function updateActiveBoxColor(){
-  if(!activeBox) return;
-  const color=`hsl(${hue}, ${sat}%, ${bright}%)`;
-  activeBox.style.backgroundColor=color;
-  const index=[...document.querySelectorAll('.color-box')].indexOf(activeBox);
-  colorRules[index]=color;
-
-  // Add to recent colors
-  if(!recentColors.includes(color)){
-    recentColors.unshift(color);
-    if(recentColors.length>5) recentColors.pop();
-  }
-  updateRecentColors();
-  updateDisplay();
-  saveProgress();
-}
-
-// --- Recent colors ---
-function updateRecentColors(){
-  const container=document.getElementById("recentColors");
-  container.innerHTML='';
-  recentColors.forEach(c=>{
-    const div=document.createElement("div");
-    div.className="recent-color";
-    div.style.backgroundColor=c;
-    div.onclick=()=>{if(activeBox){activeBox.style.backgroundColor=c; const idx=[...document.querySelectorAll('.color-box')].indexOf(activeBox); colorRules[idx]=c; updateDisplay(); saveProgress();}};
-    container.appendChild(div);
-  });
-}
-
-// --- HSL to RGB ---
+/* ---------- UTIL ---------- */
 function hslToRgb(h,s,l){
   s/=100; l/=100;
-  const k=(n)=> (n + h/30) % 12;
+  const k=n=>(n+h/30)%12;
   const a=s*Math.min(l,1-l);
-  const f=(n)=> l - a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
-  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)];
 }
 
-window.onload=loadProgress;
+createTopColorBoxes();
 </script>
 </body>
 </html>
