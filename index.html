@@ -199,23 +199,10 @@ label { font-size: 16px; }
       <button onclick="jumpToPick()">Go</button>
     </div>
   </div>
-
-  <!-- 🔹 ADDED: Pick range color block UI -->
-  <div class="card">
-    <label>Pick Range Color Block</label><br>
-    <input type="number" id="rangeStart" min="1" placeholder="Start pick">
-    <input type="number" id="rangeEnd" min="1" placeholder="End pick">
-    <button onclick="applyPickRange()">Apply Pick Range</button>
-  </div>
-
 </div>
 
 <script>
 let pattern=[], currentIndex=0, colorRules=[], recentColors=[];
-
-// 🔹 ADDED
-let pickRanges=[];
-
 let activeBox=null, hue=0, sat=100, bright=50;
 let draggingSpectrum=false, draggingBrightness=false;
 
@@ -230,28 +217,22 @@ function loadPattern(){
 function updateDisplay(){
   for(let i=1;i<=6;i++){
     const box=document.getElementById("box"+i);
-    box.textContent="";
-    box.style.backgroundColor="#444";
+    box.textContent=""; 
+    box.style.backgroundColor="#444"; 
     box.style.color="white";
   }
   if(!pattern.length){document.getElementById("pickInfo").innerText="Pick: 0 of 0"; return;}
-
-  // 🔹 ADDED: check pick ranges
-  let rangeColor=null;
-  pickRanges.forEach(r=>{
-    if(currentIndex+1>=r.start && currentIndex+1<=r.end){
-      rangeColor=r.color;
-    }
-  });
-
   const current=pattern[currentIndex];
   current.forEach(num=>{
     const b=document.getElementById("box"+num);
     b.textContent=num;
-    const color = rangeColor || colorRules[num-1];
-    if(color) b.style.backgroundColor=color;
+    if(colorRules[num-1]) b.style.backgroundColor=colorRules[num-1];
+    const rgb=b.style.backgroundColor.match(/\d+/g);
+    if(rgb){
+      const brightness=(parseInt(rgb[0])*299+parseInt(rgb[1])*587+parseInt(rgb[2])*114)/1000;
+      b.style.color=brightness>128?"black":"white";
+    }
   });
-
   document.getElementById("pickInfo").innerText=`Pick: ${currentIndex+1} of ${pattern.length}`;
   document.getElementById("progress").style.width=((currentIndex+1)/pattern.length*100)+"%";
   saveProgress();
@@ -260,23 +241,11 @@ function updateDisplay(){
 function nextNumber(){if(!pattern.length)return; currentIndex=(currentIndex+1)%pattern.length; updateDisplay();}
 function prevNumber(){if(!pattern.length)return; currentIndex=(currentIndex-1+pattern.length)%pattern.length; updateDisplay();}
 function reset(){currentIndex=0; updateDisplay(); document.getElementById("progress").style.width="0%"; saveProgress();}
-
-// 🔹 ADDED
-function applyPickRange(){
-  const start=parseInt(document.getElementById("rangeStart").value);
-  const end=parseInt(document.getElementById("rangeEnd").value);
-  if(!start||!end||start>end||!activeBox)return;
-  pickRanges.push({start,end,color:activeBox.style.backgroundColor});
-  saveProgress();
-  updateDisplay();
-}
-
 function saveProgress(){
   localStorage.setItem("pattern",JSON.stringify(pattern));
   localStorage.setItem("currentIndex",currentIndex);
   localStorage.setItem("colorRules",JSON.stringify(colorRules));
   localStorage.setItem("recentColors",JSON.stringify(recentColors));
-  localStorage.setItem("pickRanges",JSON.stringify(pickRanges)); // 🔹 ADDED
 }
 
 function loadProgress(){
@@ -284,13 +253,149 @@ function loadProgress(){
   const savedIndex=localStorage.getItem("currentIndex");
   const savedRules=localStorage.getItem("colorRules");
   const savedRecent=localStorage.getItem("recentColors");
-  const savedRanges=localStorage.getItem("pickRanges"); // 🔹 ADDED
   if(savedPattern) pattern=JSON.parse(savedPattern);
   if(savedIndex!==null) currentIndex=parseInt(savedIndex);
   if(savedRules) colorRules=JSON.parse(savedRules);
   if(savedRecent) recentColors=JSON.parse(savedRecent);
-  if(savedRanges) pickRanges=JSON.parse(savedRanges);
   createTopColorBoxes(); updateDisplay(); updateRecentColors();
+}
+
+function clearMemory(){localStorage.clear(); pattern=[]; currentIndex=0; colorRules=[]; recentColors=[]; createTopColorBoxes(); updateDisplay();}
+
+// --- Color boxes ---
+function createTopColorBoxes(){
+  const cont=document.getElementById("colorSelectorTop");
+  cont.innerHTML='';
+  for(let i=0;i<6;i++){
+    const box=document.createElement("div");
+    box.className="color-box";
+    box.style.backgroundColor=colorRules[i]||"#444";
+    box.onclick=(e)=>{activeBox=box; openColorPicker(box);};
+    cont.appendChild(box);
+  }
+}
+
+// --- Color picker ---
+function openColorPicker(box){
+  const picker=document.getElementById("colorPicker");
+  picker.style.display='block';
+  const rect=box.getBoundingClientRect();
+  picker.style.left=rect.left+'px';
+  picker.style.top=rect.bottom + window.scrollY + 'px';
+  drawSpectrum(); drawBrightness(); updateRecentColors();
+}
+
+document.addEventListener('click', e=>{
+  const picker=document.getElementById("colorPicker");
+  if(!picker.contains(e.target) && !e.target.classList.contains("color-box")){
+    picker.style.display='none';
+  }
+});
+
+// --- Spectrum ---
+const spectrumCanvas=document.getElementById("spectrumCanvas");
+const sCtx=spectrumCanvas.getContext("2d");
+const spectrumDot=document.querySelector('.spectrum-dot');
+
+function drawSpectrum(){
+  spectrumCanvas.width=spectrumCanvas.parentElement.offsetWidth;
+  spectrumCanvas.height=20;
+  const grad=sCtx.createLinearGradient(0,0,spectrumCanvas.width,0);
+  ["red","yellow","lime","cyan","blue","magenta","red"].forEach((c,i)=>grad.addColorStop(i/6,c));
+  sCtx.fillStyle=grad; sCtx.fillRect(0,0,spectrumCanvas.width,spectrumCanvas.height);
+}
+
+function pickSpectrum(e){
+  draggingSpectrum=true;
+  const rect=spectrumCanvas.getBoundingClientRect();
+  let x=Math.min(Math.max(e.clientX-rect.left,0),rect.width);
+  spectrumDot.style.left=x+'px'; spectrumDot.style.top='50%';
+  hue=x/rect.width*360;
+  drawBrightness();
+  updateActiveBoxColor();
+}
+spectrumCanvas.addEventListener('mousedown', pickSpectrum);
+document.addEventListener('mousemove', e=>{if(draggingSpectrum) pickSpectrum(e);});
+document.addEventListener('mouseup', ()=>draggingSpectrum=false);
+
+// --- Brightness ---
+const brightnessCanvas=document.getElementById("brightnessCanvas");
+const bCtx=brightnessCanvas.getContext("2d");
+const brightnessDot=document.querySelector('.brightness-dot');
+
+function drawBrightness(){
+  brightnessCanvas.width=brightnessCanvas.parentElement.offsetWidth;
+  brightnessCanvas.height=brightnessCanvas.parentElement.offsetHeight;
+  const width=brightnessCanvas.width;
+  const height=brightnessCanvas.height;
+  const image=bCtx.createImageData(width,height);
+  for(let y=0;y<height;y++){
+    for(let x=0;x<width;x++){
+      const s=x/width*100;
+      const l=100-(y/height*100);
+      const rgb=hslToRgb(hue,s,l);
+      const index=(y*width+x)*4;
+      image.data[index]=rgb[0];
+      image.data[index+1]=rgb[1];
+      image.data[index+2]=rgb[2];
+      image.data[index+3]=255;
+    }
+  }
+  bCtx.putImageData(image,0,0);
+}
+
+function pickBrightness(e){
+  draggingBrightness=true;
+  const rect=brightnessCanvas.getBoundingClientRect();
+  let x=Math.min(Math.max(e.clientX-rect.left,0),rect.width);
+  let y=Math.min(Math.max(e.clientY-rect.top,0),rect.height);
+  brightnessDot.style.left=x+'px'; brightnessDot.style.top=y+'px';
+  sat=x/rect.width*100;
+  bright=100-(y/rect.height*100);
+  updateActiveBoxColor();
+}
+brightnessCanvas.addEventListener('mousedown', pickBrightness);
+document.addEventListener('mousemove', e=>{if(draggingBrightness) pickBrightness(e);});
+document.addEventListener('mouseup', ()=>draggingBrightness=false);
+
+// --- Active box color ---
+function updateActiveBoxColor(){
+  if(!activeBox) return;
+  const color=`hsl(${hue}, ${sat}%, ${bright}%)`;
+  activeBox.style.backgroundColor=color;
+  const index=[...document.querySelectorAll('.color-box')].indexOf(activeBox);
+  colorRules[index]=color;
+
+  // Add to recent colors
+  if(!recentColors.includes(color)){
+    recentColors.unshift(color);
+    if(recentColors.length>5) recentColors.pop();
+  }
+  updateRecentColors();
+  updateDisplay();
+  saveProgress();
+}
+
+// --- Recent colors ---
+function updateRecentColors(){
+  const container=document.getElementById("recentColors");
+  container.innerHTML='';
+  recentColors.forEach(c=>{
+    const div=document.createElement("div");
+    div.className="recent-color";
+    div.style.backgroundColor=c;
+    div.onclick=()=>{if(activeBox){activeBox.style.backgroundColor=c; const idx=[...document.querySelectorAll('.color-box')].indexOf(activeBox); colorRules[idx]=c; updateDisplay(); saveProgress();}};
+    container.appendChild(div);
+  });
+}
+
+// --- HSL to RGB ---
+function hslToRgb(h,s,l){
+  s/=100; l/=100;
+  const k=(n)=> (n + h/30) % 12;
+  const a=s*Math.min(l,1-l);
+  const f=(n)=> l - a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
 }
 
 window.onload=loadProgress;
