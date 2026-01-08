@@ -20,7 +20,7 @@ body {
   margin: auto;
 }
 
-/* ---------- TOP COLOR BOXES ---------- */
+/* Top color boxes */
 #colorSelectorTop {
   display: flex;
   justify-content: space-between;
@@ -37,7 +37,7 @@ body {
   cursor: pointer;
 }
 
-/* ---------- NUMBER BOXES ---------- */
+/* Number boxes */
 #numberBoxes {
   display: flex;
   justify-content: space-between;
@@ -54,7 +54,7 @@ body {
   border-radius: 8px;
 }
 
-/* ---------- PROGRESS ---------- */
+/* Progress */
 #progressContainer {
   width: 100%;
   background: #333;
@@ -69,7 +69,7 @@ body {
   border-radius: 6px;
 }
 
-/* ---------- COLOR PICKER ---------- */
+/* Color picker dropdown */
 .color-picker-dropdown {
   position: absolute;
   display: none;
@@ -84,10 +84,10 @@ body {
 /* Hue slider */
 #hueSlider {
   width: 300px;
-  height: 12px; /* thinner */
+  height: 6px;
   margin-bottom: 15px;
   cursor: pointer;
-  border-radius: 6px; /* rounded corners */
+  border-radius: 6px;
 }
 #hueHandle {
   position: absolute;
@@ -104,7 +104,7 @@ body {
 #sbCanvas {
   width: 300px;
   height: 140px;
-  margin: 0 auto; /* center in dropdown */
+  margin: 0 auto;
   position: relative;
   cursor: crosshair;
 }
@@ -159,6 +159,14 @@ body {
   border-radius: 12px;
   margin: 20px 0;
 }
+input[type="text"], input[type="number"], input[type="color"] {
+  padding: 6px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: none;
+  margin: 5px;
+}
+label { font-size: 16px; }
 </style>
 </head>
 
@@ -169,24 +177,25 @@ body {
 <!-- Top color boxes -->
 <div id="colorSelectorTop"></div>
 
-<!-- Color picker dropdown -->
+<!-- Color Picker Dropdown -->
 <div id="colorPicker" class="color-picker-dropdown">
-  <!-- Hue slider -->
+  <!-- Hue Slider -->
   <div style="position:relative;">
     <canvas id="hueSlider"></canvas>
     <div id="hueHandle"></div>
   </div>
 
-  <!-- Saturation-Brightness box -->
-  <div style="position:relative; margin: 0 auto;">
+  <!-- Saturation-Brightness Box -->
+  <div style="position:relative; margin:0 auto;">
     <canvas id="sbCanvas"></canvas>
     <div id="sbHandle"></div>
   </div>
 
-  <!-- Recent colors -->
+  <!-- Recent Colors -->
   <div id="recentColors"></div>
 </div>
 
+<!-- Number Boxes -->
 <div id="numberBoxes">
   <div class="numberBox" id="box1" onclick="nextNumber()"></div>
   <div class="numberBox" id="box2" onclick="nextNumber()"></div>
@@ -206,22 +215,39 @@ body {
   <button onclick="clearMemory()">Clear Memory</button>
 </div>
 
+<!-- Pattern Input -->
 <div class="card">
   <label>Pattern:</label><br>
-  <input type="text" id="patternInput">
-  <button onclick="loadPattern()">Load</button>
+  <input type="text" id="patternInput" placeholder="e.g. 123,456"><button onclick="loadPattern()">Load</button>
+  <br>
+  <label>Jump to Pick:</label><br>
+  <input type="number" id="jumpInput" style="width:80px;">
+  <button onclick="jumpToPick()">Go</button>
 </div>
+
+<!-- Color Range Override -->
+<div class="card">
+  <h3>Color Ranges (override)</h3>
+  Start <input type="number" id="rangeStart" style="width:70px;">
+  End <input type="number" id="rangeEnd" style="width:70px;">
+  <input type="color" id="rangeColor">
+  <button onclick="addColorRange()">Add</button>
+  <div id="rangeList"></div>
+</div>
+
 </div>
 
 <script>
+/* ----------------- VARIABLES ----------------- */
 let pattern=[], currentIndex=0;
 let colorRules=Array(6).fill("#444");
-let recentColors=[];
+let colorRanges=[], recentColors=[];
 let activeBox=null;
 let hue=0, sat=100, bright=50;
 let draggingHue=false, draggingSB=false;
+let hueOffset=0, sbOffsetX=0, sbOffsetY=0;
 
-/* ---------- TOP COLOR BOXES ---------- */
+/* ----------------- TOP COLOR BOXES ----------------- */
 function createTopColorBoxes(){
   const topDiv=document.getElementById("colorSelectorTop");
   topDiv.innerHTML='';
@@ -234,16 +260,14 @@ function createTopColorBoxes(){
   }
 }
 
-/* ---------- COLOR PICKER ---------- */
+/* ----------------- COLOR PICKER ----------------- */
 const colorPicker=document.getElementById("colorPicker");
 const hueSlider=document.getElementById("hueSlider");
 const hueCtx=hueSlider.getContext("2d");
 const hueHandle=document.getElementById("hueHandle");
-
 const sbCanvas=document.getElementById("sbCanvas");
 const sbCtx=sbCanvas.getContext("2d");
 const sbHandle=document.getElementById("sbHandle");
-
 const recentDiv=document.getElementById("recentColors");
 
 function openPicker(box){
@@ -261,23 +285,28 @@ document.addEventListener("click", e=>{
     colorPicker.style.display='none';
 });
 
-/* ---------- HUE SLIDER ---------- */
+/* ----------------- HUE SLIDER ----------------- */
 function drawHue(){
   hueSlider.width=300;
-  hueSlider.height=12;
+  hueSlider.height=6;
   const grad=hueCtx.createLinearGradient(0,0,300,0);
   ["red","yellow","lime","cyan","blue","magenta","red"].forEach((c,i)=>grad.addColorStop(i/6,c));
   hueCtx.fillStyle=grad;
-  hueCtx.fillRect(0,0,300,12);
+  hueCtx.fillRect(0,0,300,6);
 }
 
-hueSlider.addEventListener("mousedown", e=>{draggingHue=true; moveHue(e);});
+hueSlider.addEventListener("mousedown", e=>{
+  draggingHue=true;
+  const rect=hueSlider.getBoundingClientRect();
+  hueOffset=e.clientX-rect.left-hueHandle.offsetLeft;
+  moveHue(e);
+});
 document.addEventListener("mousemove", e=>{if(draggingHue) moveHue(e);});
 document.addEventListener("mouseup", ()=>draggingHue=false);
 
 function moveHue(e){
   const rect=hueSlider.getBoundingClientRect();
-  let x=Math.max(0, Math.min(e.clientX-rect.left, rect.width));
+  let x=Math.max(0, Math.min(e.clientX-rect.left-hueOffset+hueHandle.offsetLeft, rect.width));
   hue=x/rect.width*360;
   hueHandle.style.left=x+"px";
   hueHandle.style.top=(rect.height/2)+"px";
@@ -285,7 +314,7 @@ function moveHue(e){
   updateColor();
 }
 
-/* ---------- SATURATION-BRIGHTNESS BOX ---------- */
+/* ----------------- SATURATION-BRIGHTNESS ----------------- */
 function drawSB(){
   sbCanvas.width=300;
   sbCanvas.height=140;
@@ -300,14 +329,20 @@ function drawSB(){
   }
 }
 
-sbCanvas.addEventListener("mousedown", e=>{draggingSB=true; moveSB(e);});
+sbCanvas.addEventListener("mousedown", e=>{
+  draggingSB=true;
+  const rect=sbCanvas.getBoundingClientRect();
+  sbOffsetX=e.clientX-rect.left-sbHandle.offsetLeft;
+  sbOffsetY=e.clientY-rect.top-sbHandle.offsetTop;
+  moveSB(e);
+});
 document.addEventListener("mousemove", e=>{if(draggingSB) moveSB(e);});
 document.addEventListener("mouseup", ()=>draggingSB=false);
 
 function moveSB(e){
   const rect=sbCanvas.getBoundingClientRect();
-  let x=Math.max(0, Math.min(e.clientX-rect.left, rect.width));
-  let y=Math.max(0, Math.min(e.clientY-rect.top, rect.height));
+  let x=Math.max(0, Math.min(e.clientX-rect.left-sbOffsetX+sbHandle.offsetLeft, rect.width));
+  let y=Math.max(0, Math.min(e.clientY-rect.top-sbOffsetY+sbHandle.offsetTop, rect.height));
   sbHandle.style.left=x+"px";
   sbHandle.style.top=y+"px";
   sat=(x/rect.width)*100;
@@ -315,7 +350,7 @@ function moveSB(e){
   updateColor();
 }
 
-/* ---------- UPDATE COLOR ---------- */
+/* ----------------- UPDATE COLOR ----------------- */
 function updateColor(){
   if(!activeBox) return;
   const c=`hsl(${hue},${sat}%,${bright}%)`;
@@ -331,7 +366,7 @@ function updateColor(){
   updateDisplay();
 }
 
-/* ---------- RECENT COLORS ---------- */
+/* ----------------- RECENT COLORS ----------------- */
 function updateRecent(){
   recentDiv.innerHTML='';
   recentColors.forEach(c=>{
@@ -343,10 +378,26 @@ function updateRecent(){
   });
 }
 
-/* ---------- PATTERN ---------- */
+/* ----------------- PATTERN ----------------- */
 function loadPattern(){
-  pattern=patternInput.value.split(',').map(p=>p.split('').map(Number));
-  currentIndex=0; updateDisplay();
+  const input=document.getElementById("patternInput").value.replace(/\s/g,'');
+  pattern=input.split(',').map(p=>p.split('').map(Number));
+  currentIndex=0;
+  updateDisplay();
+  saveProgress();
+}
+
+function jumpToPick(){
+  const val=+document.getElementById("jumpInput").value-1;
+  if(val>=0 && val<pattern.length){currentIndex=val; updateDisplay(); saveProgress();}
+}
+
+function getOverrideColor(){
+  const pickNum=currentIndex+1;
+  for(const r of colorRanges){
+    if(pickNum>=r.start && pickNum<=r.end) return r.color;
+  }
+  return null;
 }
 
 function updateDisplay(){
@@ -354,22 +405,44 @@ function updateDisplay(){
     const b=document.getElementById("box"+i);
     b.textContent=''; b.style.background='#444';
   }
-  if(!pattern.length){progress.style.width="0%";return;}
+  if(!pattern.length){document.getElementById("progress").style.width="0%"; return;}
+  const override=getOverrideColor();
   pattern[currentIndex].forEach(n=>{
     const b=document.getElementById("box"+n);
     b.textContent=n;
-    b.style.background=colorRules[n-1];
+    b.style.background=override||colorRules[n-1];
   });
-  pickInfo.innerText=`Pick: ${currentIndex+1} of ${pattern.length}`;
-  progress.style.width=((currentIndex+1)/pattern.length*100)+"%";
+  document.getElementById("pickInfo").innerText=`Pick: ${currentIndex+1} of ${pattern.length}`;
+  document.getElementById("progress").style.width=((currentIndex+1)/pattern.length*100)+"%";
+  saveProgress();
 }
 
-function nextNumber(){if(pattern.length){currentIndex=(currentIndex+1)%pattern.length;updateDisplay();}}
-function prevNumber(){if(pattern.length){currentIndex=(currentIndex-1+pattern.length)%pattern.length;updateDisplay();}}
-function reset(){currentIndex=0;updateDisplay();}
-function clearMemory(){pattern=[];updateDisplay();}
+function nextNumber(){if(pattern.length){currentIndex=(currentIndex+1)%pattern.length; updateDisplay();}}
+function prevNumber(){if(pattern.length){currentIndex=(currentIndex-1+pattern.length)%pattern.length; updateDisplay();}}
+function reset(){currentIndex=0; updateDisplay(); document.getElementById("progress").style.width="0%"; saveProgress();}
+function clearMemory(){pattern=[]; currentIndex=0; colorRules=Array(6).fill("#444"); colorRanges=[]; recentColors=[]; createTopColorBoxes(); updateDisplay(); localStorage.clear();}
 
-/* ---------- UTIL ---------- */
+/* ----------------- COLOR RANGE ----------------- */
+function addColorRange(){
+  const s=+document.getElementById("rangeStart").value;
+  const e=+document.getElementById("rangeEnd").value;
+  const c=document.getElementById("rangeColor").value;
+  if(!s||!e||e<s) return;
+  colorRanges.push({start:s,end:e,color:c});
+  renderRanges();
+  updateDisplay();
+}
+function renderRanges(){
+  const list=document.getElementById("rangeList");
+  list.innerHTML='';
+  colorRanges.forEach(r=>{
+    const d=document.createElement("div");
+    d.innerHTML=`${r.start}-${r.end} <span style="color:${r.color}">${r.color}</span>`;
+    list.appendChild(d);
+  });
+}
+
+/* ----------------- UTILITIES ----------------- */
 function hslToRgb(h,s,l){
   s/=100; l/=100;
   const k=n=>(n+h/30)%12;
@@ -378,6 +451,31 @@ function hslToRgb(h,s,l){
   return [Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)];
 }
 
+/* ----------------- SAVE/LOAD ----------------- */
+function saveProgress(){
+  localStorage.setItem("pattern",JSON.stringify(pattern));
+  localStorage.setItem("currentIndex",currentIndex);
+  localStorage.setItem("colorRules",JSON.stringify(colorRules));
+  localStorage.setItem("recentColors",JSON.stringify(recentColors));
+  localStorage.setItem("colorRanges",JSON.stringify(colorRanges));
+}
+function loadProgress(){
+  const p=localStorage.getItem("pattern");
+  const i=localStorage.getItem("currentIndex");
+  const r=localStorage.getItem("colorRules");
+  const rc=localStorage.getItem("recentColors");
+  const cr=localStorage.getItem("colorRanges");
+  if(p) pattern=JSON.parse(p);
+  if(i!==null) currentIndex=parseInt(i);
+  if(r) colorRules=JSON.parse(r);
+  if(rc) recentColors=JSON.parse(rc);
+  if(cr) colorRanges=JSON.parse(cr);
+  createTopColorBoxes();
+  renderRanges();
+  updateDisplay();
+}
+
+window.onload=loadProgress;
 createTopColorBoxes();
 </script>
 </body>
