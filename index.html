@@ -45,6 +45,7 @@ body {
   border-radius:8px;
   background:#444;
   border:2px solid #666;
+  cursor:pointer;
 }
 
 #progressContainer {
@@ -239,7 +240,12 @@ function clearMemory(){
   pattern=[]; idx=0; ranges=[]; recentColors=[];
   buildColors(); updateRecentColors(); update();
 }
-window.onload=load;
+window.onload=()=>{
+  load();
+  for(let i=1;i<=6;i++){
+    document.getElementById("box"+i).onclick=nextPick;
+  }
+};
 
 /* ---------- COLORS ---------- */
 function buildColors(){
@@ -319,7 +325,6 @@ function getTextColor(bg){
     const l=+bg.match(/(\d+)%\)/)[1];
     return l<55?"#fff":"#111";
   }
-  // hex fallback
   const c=bg.substring(1);
   const rgb=parseInt(c,16);
   const r=(rgb>>16)&255,g=(rgb>>8)&255,b=rgb&255;
@@ -394,11 +399,19 @@ function addRange(){
   ranges.push({s:+rangeStart.value,e:+rangeEnd.value,c:rangeColor.value});
   renderRanges(); update(); save();
 }
+function deleteRange(i){
+  ranges.splice(i,1);
+  renderRanges(); update(); save();
+}
 function renderRanges(){
   rangeList.innerHTML="";
-  ranges.forEach(r=>{
+  ranges.forEach((r,i)=>{
     const d=document.createElement("div");
-    d.textContent=`${r.s}-${r.e} ${r.c}`;
+    d.textContent=`${r.s}-${r.e} ${r.c} `;
+    const btn=document.createElement("button");
+    btn.textContent="Delete";
+    btn.onclick=()=>deleteRange(i);
+    d.appendChild(btn);
     rangeList.appendChild(d);
   });
 }
